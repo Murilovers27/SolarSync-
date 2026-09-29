@@ -11,13 +11,13 @@ import { criarRotasStatus } from "./rotas/statusRotas";
 import { criarRotasTelemetria } from "./rotas/telemetriaRotas";
 
 const app = express();
-app.use(cors());
+app.use(cors({ origin: config.corsOrigin }));
 app.use(express.json());
 
 const server = http.createServer(app);
 const io = new SocketIOServer(server, {
   cors: {
-    origin: "*",
+    origin: config.corsOrigin,
   },
 });
 
@@ -26,11 +26,13 @@ const telemetryService = new TelemetryService();
 
 const mqttBroker = new MqttBrokerService(estadoSistema, (mensagem) => {
   telemetryService.registrarMensagem(mensagem);
-  io.emit("telemetry:update", mensagem);
-  io.emit("mqtt:message", mensagem);
+  const mensagemPublica = {
+    topic: mensagem.topic,
+    receivedAt: mensagem.receivedAt,
+    value: mensagem.value,
+  };
+  io.emit("telemetry:update", mensagemPublica);
 });
-
-mqttBroker.iniciar();
 
 app.use(criarRotasStatus(estadoSistema, mqttBroker, telemetryService));
 app.use(criarRotasTelemetria(telemetryService));
@@ -38,14 +40,21 @@ app.use(criarRotasCarregador(estadoSistema, mqttBroker));
 
 io.on("connection", (socket) => {
   socket.emit("telemetry:snapshot", {
-    latestByTopic: telemetryService.getLatestByTopic(),
-    history: telemetryService.getHistory(),
+    latestByTopic: telemetryService.getLatestPublico(),
+    history: telemetryService.getHistoryPublico(),
   });
 });
 
-server.listen(config.server.port, () => {
-  console.log(`API ouvindo na porta ${config.server.port}`);
-});
+async function iniciarServidor() {
+  await telemetryService.carregarHistorico();
+  mqttBroker.iniciar();
+
+  server.listen(config.server.port, () => {
+    console.log(`API ouvindo na porta ${config.server.port}`);
+  });
+}
+
+void iniciarServidor();
 
 function shutdown(signal: string) {
   console.log(`Encerrando por ${signal}...`);

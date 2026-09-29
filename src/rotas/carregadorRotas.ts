@@ -1,11 +1,28 @@
-import { Router } from "express";
+import { NextFunction, Request, Response, Router } from "express";
+import config from "../config";
 import { MqttBrokerService } from "../servicos/MqttBrokerService";
 import { EstadoSistemaService } from "../servicos/EstadoSistemaService";
+
+function exigirChaveApi(request: Request, response: Response, next: NextFunction) {
+  const chaveRecebida = request.header("x-api-key");
+
+  if (!config.apiKey) {
+    response.status(503).json({ error: "Controle manual não configurado." });
+    return;
+  }
+
+  if (chaveRecebida !== config.apiKey) {
+    response.status(401).json({ error: "Não autorizado." });
+    return;
+  }
+
+  next();
+}
 
 export function criarRotasCarregador(estadoSistema: EstadoSistemaService, mqttBroker: MqttBrokerService) {
   const router = Router();
 
-  router.post("/commands/carregador", (request, response) => {
+  router.post("/commands/carregador", exigirChaveApi, (request, response) => {
     const payload = request.body;
 
     if (payload === undefined) {

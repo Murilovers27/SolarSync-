@@ -5,11 +5,11 @@ export function criarRotasTelemetria(telemetryService: TelemetryService) {
   const router = Router();
 
   router.get("/telemetry/latest", (_request, response) => {
-    response.json(telemetryService.getLatestByTopic());
+    response.json(telemetryService.getLatestPublico());
   });
 
   router.get("/telemetry/history", (_request, response) => {
-    response.json(telemetryService.getHistory());
+    response.json(telemetryService.getHistoryPublico());
   });
 
   return router;

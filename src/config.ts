@@ -24,10 +24,13 @@ function obterVariavelObrigatoria(...names: string[]) {
 
 const config = {
   apiKey: process.env.SOLARSYNC_API_KEY,
-  corsOrigin: process.env.CORS_ORIGIN ?? "http://localhost:5173",
+  corsOrigins: (process.env.CORS_ORIGIN ?? "http://localhost:3001")
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean),
   supabase: {
     url: process.env.SUPABASE_URL,
-    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    serviceRoleKey: process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY,
   },
   mqtt: {
     host: obterVariavelObrigatoria("BROKER_MQTT_HOST", "HIVEMQ_HOST"),

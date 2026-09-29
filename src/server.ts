@@ -11,13 +11,13 @@ import { criarRotasStatus } from "./rotas/statusRotas";
 import { criarRotasTelemetria } from "./rotas/telemetriaRotas";
 
 const app = express();
-app.use(cors({ origin: config.corsOrigin }));
+app.use(cors({ origin: config.corsOrigins }));
 app.use(express.json());
 
 const server = http.createServer(app);
 const io = new SocketIOServer(server, {
   cors: {
-    origin: config.corsOrigin,
+    origin: config.corsOrigins,
   },
 });
 
@@ -50,7 +50,14 @@ async function iniciarServidor() {
   mqttBroker.iniciar();
 
   server.listen(config.server.port, () => {
-    console.log(`API ouvindo na porta ${config.server.port}`);
+    const apiUrl = `http://localhost:${config.server.port}`;
+
+    console.log(`API SolarSync disponível em ${apiUrl}`);
+    console.log(`Health check: ${apiUrl}/health`);
+    console.log(`Status do sistema: ${apiUrl}/status`);
+    console.log(`Telemetria atual: ${apiUrl}/telemetry/latest`);
+    console.log(`Histórico: ${apiUrl}/telemetry/history`);
+    console.log(`Socket.IO: ${apiUrl}`);
   });
 }
 

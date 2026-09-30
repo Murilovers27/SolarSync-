@@ -30,6 +30,7 @@ const mqttBroker = new MqttBrokerService(estadoSistema, (mensagem) => {
     topic: mensagem.topic,
     receivedAt: mensagem.receivedAt,
     value: mensagem.value,
+    estado: estadoSistema.getEstado(),
   };
   io.emit("telemetry:update", mensagemPublica);
 });
@@ -47,6 +48,7 @@ io.on("connection", (socket) => {
 
 async function iniciarServidor() {
   await telemetryService.carregarHistorico();
+  mqttBroker.restaurarEstado(telemetryService.getLatestByTopic()[config.topicos.geracaoSolar]);
   mqttBroker.iniciar();
 
   server.listen(config.server.port, () => {

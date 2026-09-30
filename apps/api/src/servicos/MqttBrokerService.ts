@@ -60,8 +60,6 @@ export class MqttBrokerService {
         value: mensagemParseada.value,
       };
 
-      this.onMensagemRecebida(telemetria);
-
       if (topic === config.topicos.geracaoSolar) {
         const valorGeracao = this.extrairValorNumerico(mensagemParseada.value);
 
@@ -70,6 +68,8 @@ export class MqttBrokerService {
           this.publicarComando(decisao);
         }
       }
+
+      this.onMensagemRecebida(telemetria);
     });
 
     this.cliente.on("error", (erro) => {
@@ -81,6 +81,18 @@ export class MqttBrokerService {
     const decisao = this.estadoSistema.definirComandoManual(comando);
     this.publicarComando(decisao);
     return decisao;
+  }
+
+  public restaurarEstado(telemetria: TelemetriaMensagem | undefined) {
+    if (!telemetria || telemetria.topic !== config.topicos.geracaoSolar) {
+      return;
+    }
+
+    const valorGeracao = this.extrairValorNumerico(telemetria.value);
+
+    if (valorGeracao !== null) {
+      this.estadoSistema.processarGeracaoSolar(valorGeracao);
+    }
   }
 
   public publicarComando(decisao: DecisaoSistema) {

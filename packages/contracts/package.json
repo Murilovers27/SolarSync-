@@ -1,0 +1,9 @@
+{
+  "name": "@solarsync/contracts",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./telemetry.ts"
+  }
+}

@@ -1,31 +1,16 @@
 {
-  "name": "solarsync_backend",
+  "name": "solarsync",
+  "private": true,
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "workspaces": [
+    "apps/api",
+    "apps/web",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "tsc -p tsconfig.json",
-    "start": "node dist/server.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "@supabase/server": "^1.8.1",
-    "@supabase/supabase-js": "^2.117.2",
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "mqtt": "^5.15.2",
-    "socket.io": "^4.8.3"
-  },
-  "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/node": "^26.5.0",
-    "ts-node-dev": "^2.0.0",
-    "typescript": "^5.9.3"
+    "dev:api": "npm --workspace @solarsync/api run dev",
+    "dev:web": "npm --workspace @solarsync/web run dev",
+    "build:api": "npm --workspace @solarsync/api run build",
+    "build:web": "npm --workspace @solarsync/web run build"
   }
 }

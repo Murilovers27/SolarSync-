@@ -1,5 +1,8 @@
 node_modules
 dist
+.next
+.turbo
+.venv
 .env
 .env.*
 !.env.example

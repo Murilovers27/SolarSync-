@@ -76,20 +76,37 @@ Lista de itens utilizados para montar o protótipo físico que emula a geração
 
 ---
 
-## Estrutura do repositório (sugerida)
+## Estrutura do repositório
 
 ```
-/firmware
-  /esp32-solar        → firmware do módulo emulador de geração solar
-  /esp32-carregador    → firmware do módulo emulador do carregador BYD
-/backend
-  /src                 → API em Node.js + TypeScript, lógica de decisão, integração MQTT e Power BI
-/frontend
-  /src                 → Dashboard em React + TypeScript
-/docs
-  → documentação do projeto (relatório ABNT, diagramas)
+apps/
+  api/
+    src/               → API Node.js + TypeScript, MQTT e regras do sistema
+    package.json
+    tsconfig.json
+  web/
+    app/               → Dashboard Next.js
+    package.json
+    tsconfig.json
+packages/
+  contracts/           → Tipos compartilhados entre API e dashboard
+firmware/              → Firmware dos módulos ESP32
+docs/                  → Relatório ABNT, diagramas e SQL
+package.json           → Workspace e scripts do monorepo
 README.md
 ```
+
+### Comandos principais
+
+```bash
+npm install
+npm run dev:api
+npm run dev:web
+npm run build:api
+npm run build:web
+```
+
+A API roda em `http://localhost:3000` e o dashboard em `http://localhost:3001`.
 
 ---
 

@@ -25,10 +25,23 @@ type SystemStatus = {
   persisted: boolean;
 };
 
+type Tab = "agora" | "cargas" | "historico";
+
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
-function formatNumber(value: number) {
-  return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 }).format(value);
+const tabs: { id: Tab; label: string }[] = [
+  { id: "agora", label: "Agora" },
+  { id: "cargas", label: "Cargas" },
+  { id: "historico", label: "Histórico" },
+];
+
+// 8.0 / 18.4 / 0.46 — igual ao layout de referência
+function formatKw(watts: number) {
+  const kw = watts / 1000;
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: kw < 1 ? 2 : 1,
+    maximumFractionDigits: kw < 1 ? 2 : 1,
+  }).format(kw);
 }
 
 function formatDate(value: string) {
@@ -51,11 +64,47 @@ function readNumericValue(value: unknown): number | null {
   return null;
 }
 
+function SunIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+    </svg>
+  );
+}
+
+function CarIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="7" y="4" width="10" height="17" rx="2" />
+      <path d="M10 2h4M12 9v6M9.5 12h5" />
+    </svg>
+  );
+}
+
+function GridIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3 11l9-7 9 7v9H3z" />
+      <path d="M9 20v-6h6v6" />
+    </svg>
+  );
+}
+
 export default function HomePage() {
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [latest, setLatest] = useState<Record<string, TelemetryMessage>>({});
   const [history, setHistory] = useState<TelemetryMessage[]>([]);
   const [apiConnected, setApiConnected] = useState(false);
+  const [tab, setTab] = useState<Tab>("agora");
+  const [now, setNow] = useState<Date | null>(null);
+
+  // Relógio (iniciado no cliente para evitar erro de hidratação)
+  useEffect(() => {
+    setNow(new Date());
+    const timer = setInterval(() => setNow(new Date()), 15_000);
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     let socket: Socket | undefined;
@@ -98,79 +147,187 @@ export default function HomePage() {
     };
   }, []);
 
+  // ---- Valores derivados (em W) ----
   const solarTelemetry = latest["casa/solar/geracao"];
-  const solarValue = solarTelemetry ? readNumericValue(solarTelemetry.value) : status?.geracaoSolar ?? null;
+  const solarW = solarTelemetry ? readNumericValue(solarTelemetry.value) : status?.geracaoSolar ?? null;
+  const loadW = status?.consumoResidencia ?? null;
+  const gridW = solarW !== null && loadW !== null ? Math.max(loadW - solarW, 0) : null;
+  const coverage =
+    solarW !== null && loadW !== null && loadW > 0 ? Math.min(Math.round((solarW / loadW) * 100), 100) : 0;
+
+  const clock = now ? new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(now) : "--:--";
+  const dateLabel = now
+    ? new Intl.DateTimeFormat("pt-BR", { weekday: "short", day: "numeric", month: "short" }).format(now)
+    : "";
+
+  const systemActive = apiConnected && (status?.mqttConnected ?? false);
+  const topics = Object.values(latest);
 
   return (
-    <main className="dashboard-shell">
+    <main className="app">
       <header className="topbar">
-        <div>
-          <p className="eyebrow">SolarSync</p>
-          <h1>Monitoramento energético</h1>
+        <div className="brand">
+          <p className={`system-status ${systemActive ? "on" : "off"}`}>
+            <span className="dot" /> {systemActive ? "Sistema ativo" : "Sistema inativo"}
+          </p>
+          <h1>SolarSync</h1>
         </div>
-        <div className={`connection-pill ${apiConnected ? "online" : "offline"}`}>
-          <span /> {apiConnected ? "API conectada" : "API desconectada"}
+        <div className="clock">
+          <strong>{clock}</strong>
+          <span>{dateLabel}</span>
         </div>
       </header>
 
-      <section className="summary-grid" aria-label="Resumo do sistema">
-        <article className="metric-card solar-card">
-          <span>Geração solar</span>
-          <strong>{solarValue === null ? "--" : `${formatNumber(solarValue)} W`}</strong>
-          <small>Último valor recebido</small>
-        </article>
-        <article className="metric-card">
-          <span>Consumo residencial</span>
-          <strong>{status ? `${formatNumber(status.consumoResidencia)} W` : "--"}</strong>
-          <small>Consumo configurado</small>
-        </article>
-        <article className="metric-card">
-          <span>Excedente</span>
-          <strong>{status ? `${formatNumber(status.excedente)} W` : "--"}</strong>
-          <small>Disponível para autoconsumo</small>
-        </article>
-        <article className="metric-card">
-          <span>Carregador</span>
-          <strong>{status?.carregadorAtivo ? "Ligado" : "Desligado"}</strong>
-          <small>{status?.ultimaDecisao ? `Decisão: ${status.ultimaDecisao.comando}` : "Sem decisão registrada"}</small>
-        </article>
-      </section>
+      <nav className="tabs" role="tablist" aria-label="Seções">
+        {tabs.map((item) => (
+          <button
+            key={item.id}
+            role="tab"
+            aria-selected={tab === item.id}
+            className={tab === item.id ? "tab active" : "tab"}
+            onClick={() => setTab(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </nav>
 
-      <section className="content-grid">
-        <article className="panel">
-          <div className="panel-heading">
-            <div><p className="eyebrow">Telemetria</p><h2>Últimos tópicos</h2></div>
-            <span className="muted">{Object.keys(latest).length} tópicos</span>
-          </div>
-          <div className="telemetry-list">
-            {Object.values(latest).length === 0 ? <p className="empty-state">Aguardando mensagens do broker.</p> : Object.values(latest).map((message) => (
-              <div className="telemetry-row" key={`${message.topic}-${message.receivedAt}`}>
-                <div><strong>{message.topic}</strong><span>{formatDate(message.receivedAt)}</span></div>
-                <code>{JSON.stringify(message.value)}</code>
+      <div className="content" role="tabpanel">
+        {tab === "agora" && (
+          <>
+            <section className="card solar-card" aria-label="Geração solar">
+              <div className="card-head">
+                <span className="label">Geração solar</span>
+                <span className="live">Ao vivo</span>
               </div>
-            ))}
-          </div>
-        </article>
+              <div className="solar-body">
+                <div>
+                  <p className="big yellow">{solarW === null ? "--" : formatKw(solarW)}</p>
+                  <p className="unit">kW ativos</p>
+                </div>
+                <div className="gauge" aria-label={`Cobertura solar ${coverage}%`}>
+                  <svg viewBox="0 0 120 120" aria-hidden="true">
+                    <circle className="gauge-track" cx="60" cy="60" r="50" pathLength={100} />
+                    <circle
+                      className="gauge-fill"
+                      cx="60"
+                      cy="60"
+                      r="50"
+                      pathLength={100}
+                      strokeDasharray={`${(coverage * 75) / 100} 100`}
+                    />
+                  </svg>
+                  <div className="gauge-text">
+                    <strong>{coverage}%</strong>
+                    <span>Solar</span>
+                  </div>
+                </div>
+              </div>
+              <p className="hint">Cobertura solar das cargas ativas</p>
+            </section>
 
-        <article className="panel">
-          <div className="panel-heading">
-            <div><p className="eyebrow">Operação</p><h2>Conectividade</h2></div>
-          </div>
-          <dl className="status-list">
-            <div><dt>API</dt><dd>{apiConnected ? "Online" : "Offline"}</dd></div>
-            <div><dt>MQTT</dt><dd>{status?.mqttStatus ?? "Indisponível"}</dd></div>
-            <div><dt>Mensagens no histórico</dt><dd>{status?.historySize ?? history.length}</dd></div>
-            <div><dt>Persistência</dt><dd>{status?.persisted ? "Supabase" : "Memória"}</dd></div>
-          </dl>
-        </article>
-      </section>
+            <div className="pair">
+              <section className="card" aria-label="Carga total">
+                <span className="label">Carga total</span>
+                <p className="big white">{loadW === null ? "--" : formatKw(loadW)}</p>
+                <p className="unit">kW consumo</p>
+              </section>
+              <section className="card" aria-label="Rede elétrica">
+                <span className="label">Rede elétrica</span>
+                <p className="big green">{gridW === null ? "--" : formatKw(gridW)}</p>
+                <p className="unit">kW da rede</p>
+              </section>
+            </div>
 
-      <section className="panel history-panel">
-        <div className="panel-heading"><div><p className="eyebrow">Registro</p><h2>Histórico recente</h2></div><span className="muted">{history.length} mensagens</span></div>
-        <div className="history-table-wrap"><table><thead><tr><th>Horário</th><th>Tópico</th><th>Valor</th></tr></thead><tbody>
-          {history.slice().reverse().slice(0, 12).map((message, index) => <tr key={`${message.receivedAt}-${index}`}><td>{formatDate(message.receivedAt)}</td><td>{message.topic}</td><td><code>{JSON.stringify(message.value)}</code></td></tr>)}
-        </tbody></table>{history.length === 0 && <p className="empty-state">Nenhuma mensagem persistida ainda.</p>}</div>
-      </section>
+            <section className="card" aria-label="Fluxo de energia">
+              <span className="label">Fluxo de energia</span>
+              <div className="flow">
+                <div className="node solar">
+                  <span className="node-icon"><SunIcon /></span>
+                  <small>Solar</small>
+                  <strong>{solarW === null ? "--" : `${formatKw(solarW)} kW`}</strong>
+                </div>
+                <span className={`line ${solarW ? "active" : ""}`} />
+                <div className="node cars">
+                  <span className="node-icon"><CarIcon /></span>
+                  <small>Carros</small>
+                  <strong>{loadW === null ? "--" : `${formatKw(loadW)} kW`}</strong>
+                </div>
+                <span className={`line ${gridW ? "active-green" : ""}`} />
+                <div className="node grid">
+                  <span className="node-icon"><GridIcon /></span>
+                  <small>Rede</small>
+                  <strong>{gridW === null ? "--" : `${formatKw(gridW)} kW`}</strong>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
+
+        {tab === "cargas" && (
+          <section className="card" aria-label="Telemetria por tópico">
+            <div className="card-head">
+              <span className="label">Últimos tópicos</span>
+              <span className="muted">{topics.length} tópicos</span>
+            </div>
+            {topics.length === 0 ? (
+              <p className="empty">Aguardando mensagens do broker.</p>
+            ) : (
+              <ul className="rows">
+                {topics.map((message) => (
+                  <li key={message.topic}>
+                    <div>
+                      <strong>{message.topic}</strong>
+                      <span>{formatDate(message.receivedAt)}</span>
+                    </div>
+                    <code>{JSON.stringify(message.value)}</code>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className="hint">
+              Carregador: {status?.carregadorAtivo ? "ligado" : "desligado"}
+              {status?.ultimaDecisao ? ` · última decisão: ${status.ultimaDecisao.comando}` : ""}
+            </p>
+          </section>
+        )}
+
+        {tab === "historico" && (
+          <section className="card" aria-label="Histórico recente">
+            <div className="card-head">
+              <span className="label">Histórico recente</span>
+              <span className="muted">{history.length} mensagens</span>
+            </div>
+            {history.length === 0 ? (
+              <p className="empty">Nenhuma mensagem registrada ainda.</p>
+            ) : (
+              <ul className="rows">
+                {history
+                  .slice()
+                  .reverse()
+                  .slice(0, 20)
+                  .map((message, index) => (
+                    <li key={`${message.receivedAt}-${index}`}>
+                      <div>
+                        <strong>{message.topic}</strong>
+                        <span>{formatDate(message.receivedAt)}</span>
+                      </div>
+                      <code>{JSON.stringify(message.value)}</code>
+                    </li>
+                  ))}
+              </ul>
+            )}
+            <p className="hint">Armazenamento: {status?.persisted ? "Supabase" : "memória"}</p>
+          </section>
+        )}
+      </div>
+
+      <footer className="footer">
+        <span>SolarSync v1.0</span>
+        <span className={`online ${apiConnected ? "on" : "off"}`}>
+          <i /> {apiConnected ? "Online" : "Offline"}
+        </span>
+      </footer>
     </main>
   );
 }

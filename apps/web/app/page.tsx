@@ -7,6 +7,7 @@ type TelemetryMessage = {
   topic: string;
   receivedAt: string;
   value: unknown;
+  estado?: Pick<SystemStatus, "geracaoSolar" | "consumoResidencia" | "excedente" | "carregadorAtivo" | "ultimaDecisao">;
 };
 
 type SystemStatus = {
@@ -56,7 +57,7 @@ function readNumericValue(value: unknown): number | null {
   if (typeof value === "string") return Number(value.replace(",", "."));
   if (typeof value === "object" && value !== null) {
     const record = value as Record<string, unknown>;
-    for (const key of ["geracaoSolar", "geracao", "potencia", "power", "watts", "valor"]) {
+    for (const key of ["geracaoSolar", "geracao", "potencia", "potenciaWatts", "power", "watts", "valor"]) {
       const candidate = readNumericValue(record[key]);
       if (Number.isFinite(candidate)) return candidate;
     }
@@ -98,6 +99,32 @@ export default function HomePage() {
   const [apiConnected, setApiConnected] = useState(false);
   const [tab, setTab] = useState<Tab>("agora");
   const [now, setNow] = useState<Date | null>(null);
+  const [clearingData, setClearingData] = useState(false);
+  const [clearError, setClearError] = useState<string | null>(null);
+
+  async function limparDados() {
+    if (!window.confirm("Limpar os dados de Cargas e Histórico? Esta ação não pode ser desfeita.")) {
+      return;
+    }
+
+    setClearingData(true);
+    setClearError(null);
+
+    try {
+      const response = await fetch(`${apiUrl}/telemetry/data`, { method: "DELETE" });
+      if (!response.ok) {
+        throw new Error("Não foi possível limpar os dados.");
+      }
+
+      setLatest({});
+      setHistory([]);
+      setStatus((current) => current ? { ...current, historySize: 0 } : current);
+    } catch (error) {
+      setClearError(error instanceof Error ? error.message : "Não foi possível limpar os dados.");
+    } finally {
+      setClearingData(false);
+    }
+  }
 
   // Relógio (iniciado no cliente para evitar erro de hidratação)
   useEffect(() => {
@@ -108,6 +135,23 @@ export default function HomePage() {
 
   useEffect(() => {
     let socket: Socket | undefined;
+
+    socket = io(apiUrl, { transports: ["websocket"] });
+    socket.on("telemetry:snapshot", (snapshot) => {
+      setLatest(snapshot.latestByTopic);
+      setHistory(snapshot.history);
+    });
+    socket.on("telemetry:update", (message: TelemetryMessage) => {
+      setLatest((current) => ({ ...current, [message.topic]: message }));
+      setHistory((current) => [...current.slice(-199), message]);
+      setStatus((current) => message.estado && current
+        ? { ...current, ...message.estado, historySize: Math.min(current.historySize + 1, 200) }
+        : current
+          ? { ...current, historySize: Math.min(current.historySize + 1, 200) }
+          : current);
+    });
+    socket.on("connect", () => setApiConnected(true));
+    socket.on("disconnect", () => setApiConnected(false));
 
     async function loadInitialData() {
       try {
@@ -123,21 +167,8 @@ export default function HomePage() {
         setLatest(await latestResponse.json());
         setHistory(await historyResponse.json());
         setApiConnected(true);
-
-        socket = io(apiUrl, { transports: ["websocket"] });
-        socket.on("telemetry:snapshot", (snapshot) => {
-          setLatest(snapshot.latestByTopic);
-          setHistory(snapshot.history);
-        });
-        socket.on("telemetry:update", (message: TelemetryMessage) => {
-          setLatest((current) => ({ ...current, [message.topic]: message }));
-          setHistory((current) => [...current.slice(-199), message]);
-          setStatus((current) => current ? { ...current, historySize: Math.min(current.historySize + 1, 200) } : current);
-        });
-        socket.on("connect", () => setApiConnected(true));
-        socket.on("disconnect", () => setApiConnected(false));
       } catch {
-        setApiConnected(false);
+        setApiConnected(socket?.connected ?? false);
       }
     }
 
@@ -148,7 +179,9 @@ export default function HomePage() {
   }, []);
 
   // ---- Valores derivados (em W) ----
-  const solarTelemetry = latest["casa/solar/geracao"];
+  const solarTelemetry = Object.values(latest).find(
+    (message) => message.topic === "casa/solar/geracao" || message.topic.endsWith("/casa/solar/geracao"),
+  );
   const solarW = solarTelemetry ? readNumericValue(solarTelemetry.value) : status?.geracaoSolar ?? null;
   const loadW = status?.consumoResidencia ?? null;
   const gridW = solarW !== null && loadW !== null ? Math.max(loadW - solarW, 0) : null;
@@ -268,8 +301,14 @@ export default function HomePage() {
           <section className="card" aria-label="Telemetria por tópico">
             <div className="card-head">
               <span className="label">Últimos tópicos</span>
-              <span className="muted">{topics.length} tópicos</span>
+              <div className="card-actions">
+                <span className="muted">{topics.length} tópicos</span>
+                <button className="clear-button" onClick={() => void limparDados()} disabled={clearingData}>
+                  {clearingData ? "Limpando..." : "Limpar"}
+                </button>
+              </div>
             </div>
+            {clearError && <p className="error-message" role="alert">{clearError}</p>}
             {topics.length === 0 ? (
               <p className="empty">Aguardando mensagens do broker.</p>
             ) : (
@@ -296,8 +335,14 @@ export default function HomePage() {
           <section className="card" aria-label="Histórico recente">
             <div className="card-head">
               <span className="label">Histórico recente</span>
-              <span className="muted">{history.length} mensagens</span>
+              <div className="card-actions">
+                <span className="muted">{history.length} mensagens</span>
+                <button className="clear-button" onClick={() => void limparDados()} disabled={clearingData}>
+                  {clearingData ? "Limpando..." : "Limpar"}
+                </button>
+              </div>
             </div>
+            {clearError && <p className="error-message" role="alert">{clearError}</p>}
             {history.length === 0 ? (
               <p className="empty">Nenhuma mensagem registrada ainda.</p>
             ) : (

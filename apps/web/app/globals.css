@@ -159,6 +159,39 @@ button:focus-visible {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
+}
+
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.clear-button {
+  padding: 5px 8px;
+  border: 1px solid var(--red);
+  border-radius: 3px;
+  color: var(--red);
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.clear-button:hover:not(:disabled) {
+  background: var(--red);
+  color: var(--bg);
+}
+
+.clear-button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.error-message {
+  margin-top: 12px;
+  color: var(--red);
+  font-size: 0.64rem;
 }
 
 .label {

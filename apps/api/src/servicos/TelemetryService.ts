@@ -97,6 +97,25 @@ export class TelemetryService {
     return [...this.history];
   }
 
+  public async limparDados() {
+    if (this.supabase) {
+      const { error } = await this.supabase
+        .from("telemetry_messages")
+        .delete()
+        .not("id", "is", null);
+
+      if (error) {
+        console.error("Falha ao limpar histórico do Supabase:", error.message);
+        throw new Error("Não foi possível limpar os dados persistidos.");
+      }
+    }
+
+    this.history.length = 0;
+    for (const topic of Object.keys(this.latestByTopic)) {
+      delete this.latestByTopic[topic];
+    }
+  }
+
   public getHistoryPublico() {
     return this.history.map((mensagem) => this.removerDadosInternos(mensagem));
   }

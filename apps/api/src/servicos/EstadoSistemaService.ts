@@ -37,6 +37,11 @@ export class EstadoSistemaService {
     return this.consumoResidencia;
   }
 
+  public processarStatusCarregador(ativo: boolean) {
+    this.carregadorAtivo = ativo;
+    return this.carregadorAtivo;
+  }
+
   public processarGeracaoSolar(geracaoSolar: number): DecisaoSistema {
     this.geracaoSolar = geracaoSolar;
     this.excedente = geracaoSolar - this.consumoResidencia;

@@ -12,5 +12,8 @@
     "dev:web": "npm --workspace @solarsync/web run dev",
     "build:api": "npm --workspace @solarsync/api run build",
     "build:web": "npm --workspace @solarsync/web run build"
+  },
+  "dependencies": {
+    "@supabase/server": "^1.9.2"
   }
 }

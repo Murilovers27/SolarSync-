@@ -36,7 +36,14 @@ const mqttBroker = new MqttBrokerService(estadoSistema, (mensagem) => {
 });
 
 app.use(criarRotasStatus(estadoSistema, mqttBroker, telemetryService));
-app.use(criarRotasTelemetria(telemetryService));
+app.use(
+  criarRotasTelemetria(telemetryService, () => {
+    io.emit("telemetry:snapshot", {
+      latestByTopic: telemetryService.getLatestPublico(),
+      history: telemetryService.getHistoryPublico(),
+    });
+  }),
+);
 app.use(criarRotasCarregador(estadoSistema, mqttBroker));
 
 io.on("connection", (socket) => {
@@ -48,7 +55,12 @@ io.on("connection", (socket) => {
 
 async function iniciarServidor() {
   await telemetryService.carregarHistorico();
-  mqttBroker.restaurarEstado(telemetryService.getLatestByTopic()[config.topicos.geracaoSolar]);
+  const ultimaTelemetriaSolar = Object.values(telemetryService.getLatestByTopic()).find(
+    (mensagem) =>
+      mensagem.topic === config.topicos.geracaoSolar ||
+      mensagem.topic.endsWith(`/${config.topicos.geracaoSolar}`),
+  );
+  mqttBroker.restaurarEstado(ultimaTelemetriaSolar);
   mqttBroker.iniciar();
 
   server.listen(config.server.port, () => {

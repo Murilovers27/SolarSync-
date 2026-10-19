@@ -50,6 +50,13 @@ const config = {
       process.env.BROKER_MQTT_TOPICO_ASSINATURA ??
       process.env.HIVEMQ_SUBSCRIBE_TOPIC ??
       "casa/solar/geracao",
+    subscribeTopics: [
+      process.env.BROKER_MQTT_TOPICO_ASSINATURA ??
+        process.env.HIVEMQ_SUBSCRIBE_TOPIC ??
+        "casa/solar/geracao",
+      process.env.BROKER_MQTT_TOPICO_STATUS_CARREGADOR ??
+        "solarsync/murilo123/casa/carregador/status",
+    ],
   },
   server: {
     port: Number(process.env.PORTA_API ?? process.env.PORT ?? 3000),
@@ -57,7 +64,12 @@ const config = {
   consumoResidenciaPadrao: Number(process.env.CONSUMO_RESIDENCIA_PADRAO ?? 400),
   topicos: {
     geracaoSolar: "casa/solar/geracao",
-    comandoCarregador: "casa/carregador/comando",
+    comandoCarregador:
+      process.env.BROKER_MQTT_TOPICO_COMANDO_CARREGADOR ??
+      "solarsync/murilo123/casa/carregador/comando",
+    statusCarregador:
+      process.env.BROKER_MQTT_TOPICO_STATUS_CARREGADOR ??
+      "solarsync/murilo123/casa/carregador/status",
   },
 };
 

@@ -33,13 +33,13 @@ export class MqttBrokerService {
 
   public iniciar() {
     this.cliente.on("connect", () => {
-      this.cliente.subscribe(config.mqtt.subscribeTopic, { qos: 0 }, (erro) => {
+      this.cliente.subscribe(config.mqtt.subscribeTopics, { qos: 0 }, (erro) => {
         if (erro) {
           console.error("Falha ao assinar tópico MQTT:", erro.message);
           return;
         }
 
-        console.log(`Conectado ao MQTT e inscrito em ${config.mqtt.subscribeTopic}`);
+        console.log(`Conectado ao MQTT e inscrito em ${config.mqtt.subscribeTopics.join(", ")}`);
       });
     });
 
@@ -60,12 +60,18 @@ export class MqttBrokerService {
         value: mensagemParseada.value,
       };
 
-      if (topic === config.topicos.geracaoSolar) {
+      if (this.ehTopicoGeracaoSolar(topic)) {
         const valorGeracao = this.extrairValorNumerico(mensagemParseada.value);
 
         if (valorGeracao !== null) {
           const decisao = this.estadoSistema.processarGeracaoSolar(valorGeracao);
           this.publicarComando(decisao);
+        }
+      } else if (topic === config.topicos.statusCarregador) {
+        const status = this.extrairStatusCarregador(mensagemParseada.value);
+
+        if (status !== null) {
+          this.estadoSistema.processarStatusCarregador(status);
         }
       }
 
@@ -84,7 +90,7 @@ export class MqttBrokerService {
   }
 
   public restaurarEstado(telemetria: TelemetriaMensagem | undefined) {
-    if (!telemetria || telemetria.topic !== config.topicos.geracaoSolar) {
+    if (!telemetria || !this.ehTopicoGeracaoSolar(telemetria.topic)) {
       return;
     }
 
@@ -155,6 +161,7 @@ export class MqttBrokerService {
         "geracao",
         "geracaoSolar",
         "potencia",
+        "potenciaWatts",
         "power",
         "watts",
         "consumo",
@@ -166,6 +173,32 @@ export class MqttBrokerService {
         if (encontrado !== null) {
           return encontrado;
         }
+      }
+    }
+
+    return null;
+  }
+
+  private ehTopicoGeracaoSolar(topic: string) {
+    return topic === config.topicos.geracaoSolar || topic.endsWith(`/${config.topicos.geracaoSolar}`);
+  }
+
+  private extrairStatusCarregador(value: unknown): boolean | null {
+    if (typeof value === "boolean") {
+      return value;
+    }
+
+    if (typeof value === "string") {
+      const normalizado = value.trim().toLowerCase();
+      if (["true", "1", "on", "ativo", "ligado"].includes(normalizado)) return true;
+      if (["false", "0", "off", "inativo", "desligado"].includes(normalizado)) return false;
+    }
+
+    if (typeof value === "object" && value !== null) {
+      const registro = value as Record<string, unknown>;
+      for (const chave of ["ativo", "carregadorAtivo", "status"]) {
+        const status = this.extrairStatusCarregador(registro[chave]);
+        if (status !== null) return status;
       }
     }
 

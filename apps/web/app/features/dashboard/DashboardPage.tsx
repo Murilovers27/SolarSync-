@@ -1,14 +1,17 @@
 "use client";
 
 import { CarIcon, GridIcon, SunIcon } from "./icons";
+import GaragePanel from "./GaragePanel";
 import { useDashboardData } from "./useDashboardData";
 import { formatDate, formatKw, readNumericValue } from "./utils";
 import type { Tab } from "./types";
+import { encerrarSessao } from "../../lib/auth";
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "agora", label: "Agora" },
   { id: "cargas", label: "Cargas" },
   { id: "historico", label: "Histórico" },
+  { id: "garagem", label: "Garagem" },
 ];
 
 export default function DashboardPage() {
@@ -40,7 +43,7 @@ export default function DashboardPage() {
           <p className={`system-status ${systemActive ? "on" : "off"}`}><span className="dot" /> {systemActive ? "Sistema ativo" : "Sistema inativo"}</p>
           <h1>SolarSync</h1>
         </div>
-        <div className="clock"><strong>{clock}</strong><span>{dateLabel}</span></div>
+        <div className="clock"><strong>{clock}</strong><span>{dateLabel}</span><button className="logout-button" type="button" onClick={() => void encerrarSessao()}>Sair</button></div>
       </header>
 
       <nav className="tabs" role="tablist" aria-label="Seções">
@@ -83,6 +86,8 @@ export default function DashboardPage() {
           {history.length === 0 ? <p className="empty">Nenhuma mensagem registrada ainda.</p> : <ul className="rows">{history.slice().reverse().slice(0, 20).map((message, index) => <li key={`${message.receivedAt}-${index}`}><div><strong>{message.topic}</strong><span>{formatDate(message.receivedAt)}</span></div><code>{JSON.stringify(message.value)}</code></li>)}</ul>}
           <p className="hint">Armazenamento: {status?.persisted ? "Supabase" : "memória"}</p>
         </section>}
+
+        {tab === "garagem" && <GaragePanel />}
       </div>
 
       <footer className="footer"><span>SolarSync v1.0</span><span className={`online ${apiConnected ? "on" : "off"}`}><i /> {apiConnected ? "Online" : "Offline"}</span></footer>

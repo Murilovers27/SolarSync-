@@ -1,3 +1,3 @@
-import DashboardPage from "./features/dashboard/DashboardPage";
+import AuthGate from "./features/auth/AuthGate";
 
-export default DashboardPage;
+export default AuthGate;

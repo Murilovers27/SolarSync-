@@ -13,6 +13,11 @@
   --display: "Bebas Neue", "Arial Narrow", Impact, sans-serif;
   --mono: "Space Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
   color-scheme: dark;
+
+  /* Container: o conteúdo centraliza em 1200px, o fundo vai de ponta a ponta */
+  --container: 1200px;
+  --gutter: 16px;
+  --pad-x: max(var(--gutter), calc((100% - var(--container)) / 2));
 }
 
 * {
@@ -42,11 +47,10 @@ button:focus-visible {
   outline-offset: -2px;
 }
 
-/* ---------- Estrutura (mobile primeiro) ---------- */
+/* ---------- Estrutura ---------- */
 .app {
+  width: 100%;
   min-height: 100dvh;
-  max-width: 480px;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
   padding-top: env(safe-area-inset-top, 0px);
@@ -57,7 +61,7 @@ button:focus-visible {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  padding: 18px 16px 14px;
+  padding: 18px var(--pad-x) 14px;
   border-bottom: 1px solid var(--line-soft);
 }
 
@@ -141,7 +145,7 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 16px;
+  padding: 16px var(--pad-x);
 }
 
 .card {
@@ -424,7 +428,7 @@ button:focus-visible {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 16px;
+  padding: 14px var(--pad-x);
   border-top: 1px solid var(--line-soft);
   font-size: 0.62rem;
   letter-spacing: 0.08em;
@@ -448,11 +452,195 @@ button:focus-visible {
 .online.on { color: var(--muted); }
 .online.on i { background: var(--green); box-shadow: 0 0 6px var(--green); }
 
-/* ---------- Telas maiores: mantém a coluna "de celular" ---------- */
-@media (min-width: 600px) {
-  .app {
-    border-left: 1px solid var(--line-soft);
-    border-right: 1px solid var(--line-soft);
+/* =====================================================
+   DESKTOP (a partir de 900px)
+   ===================================================== */
+@media (min-width: 900px) {
+  :root {
+    --gutter: 32px;
+  }
+
+  .topbar {
+    padding: 24px var(--pad-x) 20px;
+  }
+
+  .brand h1 {
+    font-size: 2.6rem;
+  }
+
+  .system-status {
+    font-size: 0.74rem;
+  }
+
+  .clock strong {
+    font-size: 2.2rem;
+  }
+
+  .clock span {
+    font-size: 0.72rem;
+  }
+
+  /* Abas alinhadas à esquerda, em vez de esticadas */
+  .tabs {
+    display: flex;
+    gap: 8px;
+    padding-inline: var(--pad-x);
+  }
+
+  .tab {
+    padding: 16px 22px;
+    font-size: 0.74rem;
+  }
+
+  .tab:not(.active):hover {
+    color: var(--text);
+  }
+
+  /* Conteúdo em grade de 12 colunas */
+  .content {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    align-content: start;
+    gap: 20px;
+    padding: 32px var(--pad-x);
+  }
+
+  .content > * {
+    grid-column: 1 / -1;
+  }
+
+  .content > .solar-card {
+    grid-column: span 7;
+  }
+
+  .content > .pair {
+    grid-column: span 5;
+  }
+
+  .card {
+    padding: 24px;
+  }
+
+  .label,
+  .live {
+    font-size: 0.74rem;
+  }
+
+  .muted {
+    font-size: 0.72rem;
+  }
+
+  .hint {
+    font-size: 0.7rem;
+  }
+
+  .unit {
+    font-size: 0.92rem;
+  }
+
+  .big {
+    font-size: 4.2rem;
+  }
+
+  .solar-body .big {
+    font-size: 6.4rem;
+  }
+
+  .pair {
+    gap: 20px;
+  }
+
+  .pair .big {
+    font-size: 4rem;
+  }
+
+  .gauge {
+    width: 160px;
+    height: 160px;
+  }
+
+  .gauge circle {
+    stroke-width: 8;
+  }
+
+  .gauge-text strong {
+    font-size: 2.2rem;
+  }
+
+  .gauge-text span {
+    font-size: 0.66rem;
+  }
+
+  /* Fluxo de energia maior */
+  .flow {
+    gap: 8px;
+    margin-top: 28px;
+  }
+
+  .node {
+    min-width: 90px;
+    gap: 8px;
+  }
+
+  .node-icon {
+    width: 56px;
+    height: 56px;
+  }
+
+  .node-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .node small {
+    font-size: 0.66rem;
+  }
+
+  .node strong {
+    font-size: 1.2rem;
+  }
+
+  .line {
+    margin-top: 27px;
+  }
+
+  /* Listas: cada item vira uma linha horizontal */
+  .rows li {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    padding: 16px 0;
+  }
+
+  .rows li > * {
+    min-width: 0;
+  }
+
+  .rows li > :last-child {
+    text-align: right;
+  }
+
+  .rows strong {
+    font-size: 0.82rem;
+  }
+
+  .rows span {
+    font-size: 0.7rem;
+  }
+
+  .rows code {
+    font-size: 0.78rem;
+  }
+
+  .clear-button {
+    padding: 7px 12px;
+    font-size: 0.64rem;
+  }
+
+  .footer {
+    padding: 18px var(--pad-x);
+    font-size: 0.68rem;
   }
 }
 

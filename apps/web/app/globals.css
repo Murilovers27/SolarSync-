@@ -116,10 +116,22 @@ button:focus-visible {
   color: var(--muted);
 }
 
+.logout-button {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.logout-button:hover {
+  color: var(--yellow);
+}
+
 /* ---------- Abas ---------- */
 .tabs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   border-bottom: 1px solid var(--line);
 }
 
@@ -421,6 +433,30 @@ button:focus-visible {
   margin-top: 14px;
   font-size: 0.74rem;
   color: var(--muted);
+}
+
+.profile-data {
+  list-style: none;
+  margin-top: 12px;
+}
+
+.profile-data li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.profile-data span {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.profile-data strong {
+  font-size: 0.72rem;
+  text-align: right;
+  word-break: break-word;
 }
 
 /* ---------- Rodapé ---------- */

@@ -33,3 +33,8 @@ export async function autenticar({ modo, nome, email, senha }: DadosAutenticacao
   if (error) throw error;
   return data;
 }
+
+export async function encerrarSessao() {
+  const { error } = await getSupabaseClient().auth.signOut();
+  if (error) throw error;
+}

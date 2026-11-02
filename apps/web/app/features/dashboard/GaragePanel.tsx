@@ -37,8 +37,9 @@ export default function GaragePanel() {
     try {
       await saveLoad(value);
       setLoadInput("");
+      setActionError(null);
     } catch {
-      // The hook exposes the server error.
+      // O hook já expõe o erro do servidor.
     }
   }
 
@@ -86,7 +87,10 @@ export default function GaragePanel() {
   return (
     <>
       <section className="card" aria-label="Dados do usuário">
-        <div className="card-head"><span className="label">Meu perfil</span><span className="muted">Conta ativa</span></div>
+        <div className="card-head">
+          <span className="label">Meu perfil</span>
+          <span className="muted">Conta ativa</span>
+        </div>
         <ul className="profile-data">
           <li><span>Nome</span><strong>{profile?.nome}</strong></li>
           <li><span>E-mail</span><strong>{profile?.email}</strong></li>
@@ -95,26 +99,93 @@ export default function GaragePanel() {
       </section>
 
       <section className="card" aria-label="Carga residencial">
-        <div className="card-head"><span className="label">Carga total</span><span className="muted">Watts</span></div>
+        <div className="card-head">
+          <span className="label">Carga total</span>
+          <span className="muted">Watts</span>
+        </div>
         <p className="hint">Valor usado no cálculo de consumo do painel. Atual: {loadW ?? profile?.carga_total_w ?? 400} W</p>
         <div className="garage-form">
-          <input type="number" min="1" step="1" placeholder="Ex.: 400" value={loadInput} onChange={(event) => setLoadInput(event.target.value)} />
-          <button className="garage-button" type="button" onClick={() => void handleSaveLoad()} disabled={saving}>Salvar carga</button>
+          <input 
+            type="number" 
+            min="1" 
+            step="1" 
+            placeholder="Ex.: 400" 
+            aria-label="Nova carga residencial em Watts"
+            value={loadInput} 
+            onChange={(event) => setLoadInput(event.target.value)} 
+          />
+          <button className="garage-button" type="button" onClick={() => void handleSaveLoad()} disabled={saving}>
+            Salvar carga
+          </button>
         </div>
         {loadError && <p className="error-message" role="alert">{loadError}</p>}
       </section>
 
       <section className="card" aria-label="Carros vinculados">
-        <div className="card-head"><span className="label">Meus carros</span><div className="card-actions"><span className="muted">{cars.length} cadastrados</span><button className="garage-button" type="button" onClick={() => setCarFormOpen((open) => !open)}>Adicionar</button></div></div>
-        {carFormOpen && <div className="garage-form">
-          <input placeholder="Nome" value={carName} onChange={(event) => setCarName(event.target.value)} />
-          <input placeholder="Marca" value={carBrand} onChange={(event) => setCarBrand(event.target.value)} />
-          <input placeholder="Modelo" value={carModel} onChange={(event) => setCarModel(event.target.value)} />
-          <input placeholder="Placa" value={carPlate} onChange={(event) => setCarPlate(event.target.value)} />
-          <button className="garage-button" type="button" onClick={() => void handleAddCar()} disabled={savingCar}>Salvar veículo</button>
-        </div>}
+        <div className="card-head">
+          <span className="label">Meus carros</span>
+          <div className="card-actions">
+            <span className="muted">{cars.length} cadastrados</span>
+            <button className="garage-button" type="button" onClick={() => setCarFormOpen((open) => !open)}>
+              {carFormOpen ? "Fechar" : "Adicionar"}
+            </button>
+          </div>
+        </div>
+
+        {carFormOpen && (
+          <div className="garage-form">
+            <input 
+              placeholder="Nome" 
+              aria-label="Nome do veículo"
+              value={carName} 
+              onChange={(event) => setCarName(event.target.value)} 
+            />
+            <input 
+              placeholder="Marca" 
+              aria-label="Marca do veículo"
+              value={carBrand} 
+              onChange={(event) => setCarBrand(event.target.value)} 
+            />
+            <input 
+              placeholder="Modelo" 
+              aria-label="Modelo do veículo"
+              value={carModel} 
+              onChange={(event) => setCarModel(event.target.value)} 
+            />
+            <input 
+              placeholder="Placa" 
+              aria-label="Placa do veículo"
+              value={carPlate} 
+              onChange={(event) => setCarPlate(event.target.value)} 
+            />
+            <button className="garage-button" type="button" onClick={() => void handleAddCar()} disabled={savingCar}>
+              Salvar veículo
+            </button>
+          </div>
+        )}
+
         {actionError && <p className="error-message" role="alert">{actionError}</p>}
-        {cars.length === 0 ? <p className="empty">Nenhum carro vinculado a este usuário.</p> : <ul className="rows">{cars.map((car) => <li key={car.id}><div><strong>{car.nome}</strong><span>{[car.marca, car.modelo].filter(Boolean).join(" ") || "Modelo não informado"}</span></div><code>{car.placa || "Placa não informada"} <button className="delete-button" type="button" onClick={() => void handleDeleteCar(car.id)}>Excluir</button></code></li>)}</ul>}
+
+        {cars.length === 0 ? (
+          <p className="empty">Nenhum carro vinculado a este usuário.</p>
+        ) : (
+          <ul className="rows">
+            {cars.map((car) => (
+              <li key={car.id}>
+                <div>
+                  <strong>{car.nome}</strong>
+                  <span>{[car.marca, car.modelo].filter(Boolean).join(" ") || "Modelo não informado"}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", justifyContent: "space-between" }}>
+                  <code>{car.placa || "Placa não informada"}</code>
+                  <button className="delete-button" type="button" onClick={() => void handleDeleteCar(car.id)}>
+                    Excluir
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </>
   );

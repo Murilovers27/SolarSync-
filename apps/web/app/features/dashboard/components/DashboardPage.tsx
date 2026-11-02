@@ -95,7 +95,7 @@ export default function DashboardPage() {
         {tab === "historico" && <section className="card" aria-label="Histórico recente">
           <div className="card-head"><span className="label">Histórico recente</span><div className="card-actions"><span className="muted">{history.length} mensagens</span><button className="clear-button" onClick={() => void limparDados()} disabled={clearingData}>{clearingData ? "Limpando..." : "Limpar"}</button></div></div>
           {clearError && <p className="error-message" role="alert">{clearError}</p>}
-          {history.length === 0 ? <p className="empty">Nenhuma mensagem registrada ainda.</p> : <ul className="rows">{history.slice().reverse().slice(0, 20).map((message, index) => <li key={`${message.receivedAt}-${index}`}><div><strong>{message.topic}</strong><span>{formatDate(message.receivedAt)}</span></div><code>{JSON.stringify(message.value)}</code></li>)}</ul>}
+          {history.length === 0 ? <p className="empty">Nenhuma mensagem registrada ainda.</p> : <ul className="rows">{history.slice().reverse().map((message, index) => <li key={`${message.receivedAt}-${index}`}><div><strong>{message.topic}</strong><span>{formatDate(message.receivedAt)}</span></div><code>{JSON.stringify(message.value)}</code></li>)}</ul>}
           <p className="hint">Armazenamento: {status?.persisted ? "Supabase" : "memória"}</p>
         </section>}
 

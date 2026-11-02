@@ -1,7 +1,7 @@
 .root {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   width: 100%;
 }
 
@@ -26,11 +26,57 @@
   display: inline-block;
 }
 
-/* Customização da barra de rolagem inspirada na referência */
+/* Estilos para os controlos de filtro de Data e Hora */
+.filterControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filterLabel {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.filterInput {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+}
+
+.filterInput::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+.filterInput:focus-visible {
+  outline: 2px solid var(--yellow);
+  outline-offset: 1px;
+}
+
+/* Customização da barra de rolagem */
 .chartScroll {
   width: 100%;
   overflow-x: auto;
-  margin-top: 18px;
+  margin-top: 10px;
   padding-bottom: 8px;
 }
 
@@ -53,7 +99,6 @@
   background: var(--muted);
 }
 
-/* Adiciona setas visuais nas pontas da scrollbar para simular o layout da imagem */
 .chartScroll::-webkit-scrollbar-button {
   background-color: #242424;
   border: 1px solid var(--line);

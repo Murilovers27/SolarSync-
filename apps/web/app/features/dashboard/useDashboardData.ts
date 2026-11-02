@@ -6,6 +6,17 @@ import type { Tab, SystemStatus, TelemetryMessage } from "./types";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
+function mergeTelemetry(current: TelemetryMessage[], incoming: TelemetryMessage[]) {
+  const merged = [...current, ...incoming];
+  const unique = new Map(merged.map((message) => [
+    `${message.topic}|${message.receivedAt}|${JSON.stringify(message.value)}`,
+    message,
+  ]));
+  return [...unique.values()].sort(
+    (first, second) => new Date(first.receivedAt).getTime() - new Date(second.receivedAt).getTime(),
+  );
+}
+
 export function useDashboardData() {
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [latest, setLatest] = useState<Record<string, TelemetryMessage>>({});
@@ -47,16 +58,16 @@ export function useDashboardData() {
 
     socket = io(apiUrl, { transports: ["websocket"] });
     socket.on("telemetry:snapshot", (snapshot) => {
-      setLatest(snapshot.latestByTopic);
-      setHistory(snapshot.history);
+      setLatest((current) => ({ ...snapshot.latestByTopic, ...current }));
+      setHistory((current) => mergeTelemetry(current, snapshot.history));
     });
     socket.on("telemetry:update", (message: TelemetryMessage) => {
       setLatest((current) => ({ ...current, [message.topic]: message }));
-      setHistory((current) => [...current.slice(-199), message]);
+      setHistory((current) => mergeTelemetry(current, [message]));
       setStatus((current) => message.estado && current
-        ? { ...current, ...message.estado, historySize: Math.min(current.historySize + 1, 200) }
+        ? { ...current, ...message.estado, historySize: current.historySize + 1 }
         : current
-          ? { ...current, historySize: Math.min(current.historySize + 1, 200) }
+          ? { ...current, historySize: current.historySize + 1 }
           : current);
     });
     socket.on("connect", () => setApiConnected(true));
@@ -73,8 +84,10 @@ export function useDashboardData() {
         if (!statusResponse.ok || !latestResponse.ok || !historyResponse.ok) throw new Error("API indisponível");
 
         setStatus(await statusResponse.json());
-        setLatest(await latestResponse.json());
-        setHistory(await historyResponse.json());
+        const latestData = await latestResponse.json();
+        const historyData = await historyResponse.json();
+        setLatest((current) => ({ ...latestData, ...current }));
+        setHistory((current) => mergeTelemetry(current, historyData));
         setApiConnected(true);
       } catch {
         setApiConnected(socket?.connected ?? false);

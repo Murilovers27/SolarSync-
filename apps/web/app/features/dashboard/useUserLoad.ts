@@ -4,11 +4,25 @@ import { useEffect, useState } from "react";
 import { getSupabaseClient } from "../../lib/supabase";
 
 const DEFAULT_LOAD_W = 400;
+const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
 
 export function useUserLoad() {
   const [loadW, setLoadW] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function sincronizarCargaComApi(value: number) {
+    const response = await fetch(`${apiUrl}/status/consumo`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ consumoResidencia: value }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => null) as { error?: string } | null;
+      throw new Error(body?.error ?? "Não foi possível sincronizar a carga com a API.");
+    }
+  }
 
   useEffect(() => {
     let ativo = true;
@@ -32,7 +46,9 @@ export function useUserLoad() {
         throw profileError;
       }
 
-      if (ativo) setLoadW(Number(data?.carga_total_w ?? DEFAULT_LOAD_W));
+      const value = Number(data?.carga_total_w ?? DEFAULT_LOAD_W);
+      if (ativo) setLoadW(value);
+      await sincronizarCargaComApi(value);
     }
 
     void carregarCarga().catch((loadError: unknown) => {
@@ -62,6 +78,7 @@ export function useUserLoad() {
         .eq("auth_user_id", userData.user.id);
       if (updateError) throw updateError;
 
+      await sincronizarCargaComApi(value);
       setLoadW(value);
       window.dispatchEvent(new CustomEvent("solarsync:carga-atualizada", { detail: value }));
     } catch (saveError: unknown) {
@@ -71,6 +88,7 @@ export function useUserLoad() {
       } else {
         setError("Não foi possível salvar a carga.");
       }
+
       throw saveError;
     } finally {
       setSaving(false);

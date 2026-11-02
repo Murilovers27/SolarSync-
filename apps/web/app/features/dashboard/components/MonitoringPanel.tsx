@@ -1,7 +1,8 @@
 "use client";
 
-import type { TelemetryMessage } from "./types";
-import { formatKw, readNumericValue } from "./utils";
+import type { TelemetryMessage } from "../types";
+import { formatKw, readNumericValue } from "../utils";
+import styles from "./MonitoringPanel.module.css";
 
 const WIDTH = 900;
 const HEIGHT = 460;
@@ -31,7 +32,6 @@ type Point = {
 };
 
 export default function MonitoringPanel({ history }: { history: TelemetryMessage[] }) {
-  // Filtra, valida e ordena as leituras cronologicamente pelo horário
   const readings = history
     .filter((message) => isSolarTopic(message.topic))
     .map((message) => ({
@@ -47,7 +47,6 @@ export default function MonitoringPanel({ history }: { history: TelemetryMessage
 
   const maxWatts = Math.max(1000, ...readings.map((item) => item.watts));
 
-  // Mapeamento correto: Eixo X = Tempo (00:00 às 24:00) | Eixo Y = Geração em Watts (Invertido no SVG pois Y cresce para baixo)
   const points: Point[] = readings.map(({ message, watts, timeMinutes }) => ({
     x: PADDING.left + (timeMinutes / 1440) * INNER_WIDTH,
     y: PADDING.top + INNER_HEIGHT - (watts / maxWatts) * INNER_HEIGHT,
@@ -57,27 +56,35 @@ export default function MonitoringPanel({ history }: { history: TelemetryMessage
 
   const line = points.map((point) => `${point.x},${point.y}`).join(" ");
   
-  // Ticks para o Eixo X (Horários: 0h, 6h, 12h, 18h, 24h)
   const xTicks = [0, 360, 720, 1080, 1440];
-  // Ticks para o Eixo Y (Valores em kW)
   const yTicks = [0, 0.25, 0.5, 0.75, 1];
 
+  // Obtém o horário da última leitura formatado
+  const lastReadingTime = readings.length > 0 
+    ? new Intl.DateTimeFormat("pt-BR", { timeStyle: "short" }).format(
+      new Date(readings[readings.length - 1].message.receivedAt),
+    )
+    : "--:--";
+
   return (
-    <section className="card monitoring-card" aria-label="Monitoramento da geração solar">
+    <section className={`card monitoring-card ${styles.root}`} aria-label="Monitoramento da geração solar">
       <div className="card-head">
         <div>
           <span className="label">Monitoramento</span>
           <p className="monitoring-subtitle">Curva diária de geração solar</p>
         </div>
-        <span className="muted">{readings.length} leituras</span>
+        <div className={styles.liveIndicator}>
+          <span className={styles.liveDot} />
+          <span className="live">Ao Vivo</span>
+          <span className="muted" style={{ marginLeft: "8px" }}>{readings.length} leituras</span>
+        </div>
       </div>
+
       {points.length < 2 ? (
         <p className="empty">Aguardando pelo menos duas leituras solares para desenhar a curva.</p>
       ) : (
-        <div className="chart-scroll">
+        <div className={styles.chartScroll}>
           <svg className="monitoring-chart" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label="Gráfico de geração solar ao longo do dia">
-            
-            {/* Linhas de grade e rótulos do Eixo Y (Potência em kW) */}
             {yTicks.map((ratio) => {
               const y = PADDING.top + INNER_HEIGHT - ratio * INNER_HEIGHT;
               return (
@@ -90,7 +97,6 @@ export default function MonitoringPanel({ history }: { history: TelemetryMessage
               );
             })}
 
-            {/* Linhas de grade e rótulos do Eixo X (Horário do dia) */}
             {xTicks.map((minutes) => {
               const x = PADDING.left + (minutes / 1440) * INNER_WIDTH;
               return (
@@ -116,7 +122,11 @@ export default function MonitoringPanel({ history }: { history: TelemetryMessage
           </svg>
         </div>
       )}
-      <p className="hint">Eixo X: horário do dia · Eixo Y: quantidade gerada em tempo real</p>
+
+      <div className={styles.footerInfo}>
+        <p className="hint">Eixo X: horário do dia · Eixo Y: quantidade gerada em tempo real</p>
+        <p className={styles.lastReading}>Última leitura: <strong>{lastReadingTime}</strong></p>
+      </div>
     </section>
   );
 }

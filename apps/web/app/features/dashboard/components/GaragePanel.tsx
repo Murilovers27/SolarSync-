@@ -1,9 +1,10 @@
 "use client";
 
-import { useGarageData } from "./useGarageData";
-import { useUserLoad } from "./useUserLoad";
+import { useGarageData } from "../useGarageData";
+import { useUserLoad } from "../useUserLoad";
 import { useState } from "react";
-import { getSupabaseClient } from "../../lib/supabase";
+import { getSupabaseClient } from "../../../lib/supabase";
+import styles from "./GaragePanel.module.css";
 
 function formatSupabaseError(error: unknown, fallback: string) {
   if (error && typeof error === "object" && "message" in error) {
@@ -85,6 +86,7 @@ export default function GaragePanel() {
   }
 
   return (
+    <div className={styles.root}>
     <>
       <section className="card" aria-label="Dados do usuário">
         <div className="card-head">
@@ -188,5 +190,6 @@ export default function GaragePanel() {
         )}
       </section>
     </>
+    </div>
   );
 }

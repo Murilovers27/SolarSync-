@@ -1,7 +1,8 @@
 "use client";
 
-import { useGarageData } from "./useGarageData";
-import type { SystemStatus } from "./types";
+import { useGarageData } from "../useGarageData";
+import type { SystemStatus } from "../types";
+import styles from "./VehicleLoadsPanel.module.css";
 
 export default function VehicleLoadsPanel({ status }: { status: SystemStatus | null }) {
   const { cars, loading, error } = useGarageData();
@@ -15,7 +16,7 @@ export default function VehicleLoadsPanel({ status }: { status: SystemStatus | n
   }
 
   return (
-    <section className="card" aria-label="Veículos em carga">
+    <section className={`card ${styles.root}`} aria-label="Veículos em carga">
       <div className="card-head">
         <span className="label">Veículos vinculados</span>
         <span className="muted">{cars.length} cadastrados</span>

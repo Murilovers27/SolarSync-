@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import Login from "../../login/Login";
-import DashboardPage from "../dashboard/DashboardPage";
+import DashboardPage from "../dashboard/components/DashboardPage";
 import { getSupabaseClient } from "../../lib/supabase";
 
 export default function AuthGate() {

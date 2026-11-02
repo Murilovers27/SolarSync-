@@ -1,0 +1,127 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.monitoring-subtitle {
+  margin-top: 6px;
+  font-size: 0.68rem;
+  color: var(--text);
+}
+
+.liveIndicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.liveDot {
+  width: 6px;
+  height: 6px;
+  background-color: var(--green);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--green);
+  display: inline-block;
+}
+
+/* Customização da barra de rolagem inspirada na referência */
+.chartScroll {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 18px;
+  padding-bottom: 8px;
+}
+
+.chartScroll::-webkit-scrollbar {
+  height: 14px;
+}
+
+.chartScroll::-webkit-scrollbar-track {
+  background: #1a1a1a;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+}
+
+.chartScroll::-webkit-scrollbar-thumb {
+  background: #6d6d6d;
+  border-radius: 2px;
+}
+
+.chartScroll::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* Adiciona setas visuais nas pontas da scrollbar para simular o layout da imagem */
+.chartScroll::-webkit-scrollbar-button {
+  background-color: #242424;
+  border: 1px solid var(--line);
+  height: 14px;
+  width: 14px;
+}
+
+.monitoring-chart {
+  display: block;
+  width: 100%;
+  min-width: 620px;
+  height: auto;
+  overflow: visible;
+}
+
+.chart-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.chart-axis-label {
+  fill: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.chart-title {
+  fill: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.chart-line {
+  fill: none;
+  stroke: var(--yellow);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.chart-point {
+  fill: var(--yellow);
+  stroke: var(--bg);
+  stroke-width: 2;
+  transition: r 0.2s ease;
+}
+
+.chart-point:hover {
+  r: 6;
+}
+
+.footerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.lastReading {
+  font-size: 0.7rem;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lastReading strong {
+  color: var(--text);
+  font-family: var(--display);
+  font-size: 0.9rem;
+  letter-spacing: 0.06em;
+}

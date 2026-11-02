@@ -2,13 +2,15 @@
 
 import { CarIcon, GridIcon, SunIcon } from "./icons";
 import GaragePanel from "./GaragePanel";
-import { useDashboardData } from "./useDashboardData";
-import { formatDate, formatKw, readNumericValue } from "./utils";
-import type { Tab } from "./types";
-import { encerrarSessao } from "../../lib/auth";
-import { useUserLoad } from "./useUserLoad";
+import { useDashboardData } from "../useDashboardData";
+import { formatDate, formatKw, readNumericValue } from "../utils";
+import type { Tab } from "../types";
+import { encerrarSessao } from "../../../lib/auth";
+import { useUserLoad } from "../useUserLoad";
 import MonitoringPanel from "./MonitoringPanel";
 import VehicleLoadsPanel from "./VehicleLoadsPanel";
+import styles from "./DashboardPage.module.css";
+import "./DashboardShared.css";
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "agora", label: "Agora" },
@@ -42,7 +44,7 @@ export default function DashboardPage() {
   const topics = Object.values(latest);
 
   return (
-    <main className="app">
+    <main className={`app ${styles.root}`}>
       <header className="topbar">
         <div className="brand">
           <p className={`system-status ${systemActive ? "on" : "off"}`}><span className="dot" /> {systemActive ? "Sistema ativo" : "Sistema inativo"}</p>

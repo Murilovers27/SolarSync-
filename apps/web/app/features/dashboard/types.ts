@@ -21,4 +21,4 @@ export type SystemStatus = {
   persisted: boolean;
 };
 
-export type Tab = "agora" | "cargas" | "historico" | "garagem";
+export type Tab = "agora" | "monitoramento" | "cargas" | "historico" | "garagem";

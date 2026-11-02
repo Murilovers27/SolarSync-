@@ -7,9 +7,12 @@ import { formatDate, formatKw, readNumericValue } from "./utils";
 import type { Tab } from "./types";
 import { encerrarSessao } from "../../lib/auth";
 import { useUserLoad } from "./useUserLoad";
+import MonitoringPanel from "./MonitoringPanel";
+import VehicleLoadsPanel from "./VehicleLoadsPanel";
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "agora", label: "Agora" },
+  { id: "monitoramento", label: "Monitoramento" },
   { id: "cargas", label: "Cargas" },
   { id: "historico", label: "Histórico" },
   { id: "garagem", label: "Garagem" },
@@ -75,12 +78,17 @@ export default function DashboardPage() {
           </div></section>
         </>}
 
-        {tab === "cargas" && <section className="card" aria-label="Telemetria por tópico">
-          <div className="card-head"><span className="label">Últimos tópicos</span><div className="card-actions"><span className="muted">{topics.length} tópicos</span><button className="clear-button" onClick={() => void limparDados()} disabled={clearingData}>{clearingData ? "Limpando..." : "Limpar"}</button></div></div>
-          {clearError && <p className="error-message" role="alert">{clearError}</p>}
-          {topics.length === 0 ? <p className="empty">Aguardando mensagens do broker.</p> : <ul className="rows">{topics.map((message) => <li key={message.topic}><div><strong>{message.topic}</strong><span>{formatDate(message.receivedAt)}</span></div><code>{JSON.stringify(message.value)}</code></li>)}</ul>}
-          <p className="hint">Carregador: {status?.carregadorAtivo ? "ligado" : "desligado"}{status?.ultimaDecisao ? ` · última decisão: ${status.ultimaDecisao.comando}` : ""}</p>
-        </section>}
+        {tab === "monitoramento" && <MonitoringPanel history={history} />}
+
+        {tab === "cargas" && <>
+          <VehicleLoadsPanel status={status} />
+          <section className="card" aria-label="Telemetria por tópico">
+            <div className="card-head"><span className="label">Últimos tópicos</span><div className="card-actions"><span className="muted">{topics.length} tópicos</span><button className="clear-button" onClick={() => void limparDados()} disabled={clearingData}>{clearingData ? "Limpando..." : "Limpar"}</button></div></div>
+            {clearError && <p className="error-message" role="alert">{clearError}</p>}
+            {topics.length === 0 ? <p className="empty">Aguardando mensagens do broker.</p> : <ul className="rows">{topics.map((message) => <li key={message.topic}><div><strong>{message.topic}</strong><span>{formatDate(message.receivedAt)}</span></div><code>{JSON.stringify(message.value)}</code></li>)}</ul>}
+            <p className="hint">Carregador: {status?.carregadorAtivo ? "ligado" : "desligado"}{status?.ultimaDecisao ? ` · última decisão: ${status.ultimaDecisao.comando}` : ""}</p>
+          </section>
+        </>}
 
         {tab === "historico" && <section className="card" aria-label="Histórico recente">
           <div className="card-head"><span className="label">Histórico recente</span><div className="card-actions"><span className="muted">{history.length} mensagens</span><button className="clear-button" onClick={() => void limparDados()} disabled={clearingData}>{clearingData ? "Limpando..." : "Limpar"}</button></div></div>

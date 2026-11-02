@@ -446,6 +446,118 @@ input:focus-visible {
   color: var(--muted);
 }
 
+.monitoring-subtitle {
+  margin-top: 6px;
+  font-size: 0.68rem;
+  color: var(--text);
+}
+
+.chart-scroll {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 18px;
+}
+
+.monitoring-chart {
+  display: block;
+  width: 100%;
+  min-width: 620px;
+  height: auto;
+  overflow: visible;
+}
+
+.chart-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.chart-axis-label {
+  fill: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.chart-title {
+  fill: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.chart-line {
+  fill: none;
+  stroke: var(--yellow);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.chart-point {
+  fill: var(--yellow);
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+
+.vehicle-loads {
+  list-style: none;
+  margin-top: 12px;
+}
+
+.vehicle-load {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.vehicle-load strong,
+.vehicle-load span,
+.vehicle-load small {
+  display: block;
+}
+
+.vehicle-load strong {
+  font-size: 0.74rem;
+}
+
+.vehicle-load span,
+.vehicle-load small {
+  margin-top: 4px;
+  font-size: 0.62rem;
+  color: var(--muted);
+}
+
+.vehicle-load small {
+  color: var(--yellow);
+}
+
+.vehicle-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+}
+
+.vehicle-status i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.vehicle-status.active {
+  color: var(--green);
+}
+
+.vehicle-status.active i {
+  background: var(--green);
+  box-shadow: 0 0 7px rgba(61, 220, 132, 0.55);
+}
+
 .profile-data {
   list-style: none;
   margin-top: 12px;

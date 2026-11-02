@@ -30,5 +30,18 @@ export function criarRotasStatus(
     });
   });
 
+  router.post("/status/consumo", (request, response) => {
+    const consumo = Number(request.body?.consumoResidencia);
+
+    if (!Number.isFinite(consumo) || consumo <= 0) {
+      response.status(400).json({ error: "consumoResidencia deve ser um número maior que zero." });
+      return;
+    }
+
+    response.json({
+      consumoResidencia: estadoSistema.definirConsumoResidencia(consumo),
+    });
+  });
+
   return router;
 }

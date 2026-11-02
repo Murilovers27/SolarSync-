@@ -12,7 +12,6 @@ type TelemetryRow = {
 export class TelemetryService {
   private readonly latestByTopic: Record<string, TelemetriaMensagem> = {};
   private readonly history: TelemetriaMensagem[] = [];
-  private readonly maxHistory = 200;
   private readonly supabase: SupabaseClient | null;
 
   constructor() {
@@ -30,10 +29,6 @@ export class TelemetryService {
     this.latestByTopic[mensagem.topic] = mensagem;
     this.history.push(mensagem);
 
-    if (this.history.length > this.maxHistory) {
-      this.history.shift();
-    }
-
     void this.persistirMensagem(mensagem);
   }
 
@@ -42,23 +37,35 @@ export class TelemetryService {
       return;
     }
 
-    const { data, error } = await this.supabase
-      .from("telemetry_messages")
-      .select("topic, received_at, raw, value")
-      .order("received_at", { ascending: false })
-      .limit(this.maxHistory);
+    const pageSize = 1000;
+    const mensagens: TelemetriaMensagem[] = [];
+    let offset = 0;
 
-    if (error) {
-      console.error("Falha ao carregar histórico do Supabase:", error.message);
-      return;
+    while (true) {
+      const { data, error } = await this.supabase
+        .from("telemetry_messages")
+        .select("topic, received_at, raw, value")
+        .order("received_at", { ascending: true })
+        .range(offset, offset + pageSize - 1);
+
+      if (error) {
+        console.error("Falha ao carregar histórico do Supabase:", error.message);
+        return;
+      }
+
+      const pagina = (data as TelemetryRow[]).map((registro) => ({
+        topic: registro.topic,
+        receivedAt: registro.received_at,
+        raw: registro.raw,
+        value: registro.value,
+      }));
+      mensagens.push(...pagina);
+
+      if (pagina.length < pageSize) {
+        break;
+      }
+      offset += pageSize;
     }
-
-    const mensagens = (data as TelemetryRow[]).reverse().map((registro) => ({
-      topic: registro.topic,
-      receivedAt: registro.received_at,
-      raw: registro.raw,
-      value: registro.value,
-    }));
 
     for (const mensagem of mensagens) {
       this.latestByTopic[mensagem.topic] = mensagem;

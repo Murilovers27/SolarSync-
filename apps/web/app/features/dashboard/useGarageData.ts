@@ -9,6 +9,7 @@ export type GarageProfile = {
   nome: string;
   email: string;
   carro: string | null;
+  carga_total_w?: number;
 };
 
 export type GarageCar = {
@@ -37,19 +38,31 @@ export function useGarageData() {
         .maybeSingle();
 
       if (profileError) throw profileError;
-      if (!profileData) throw new Error("Perfil do usuário ainda não está disponível.");
+      const profile = (profileData as GarageProfile | null) ?? {
+        id: user.id,
+        nome: typeof user.user_metadata?.nome === "string" && user.user_metadata.nome.trim()
+          ? user.user_metadata.nome
+          : user.email?.split("@")[0] ?? "Usuário",
+        email: user.email ?? "",
+        carro: null,
+        carga_total_w: 400,
+      };
 
-      const { data: carData, error: carsError } = await supabase
-        .from("carros")
-        .select("id, nome, marca, modelo, placa")
-        .eq("usuario_id", profileData.id)
-        .order("created_at", { ascending: true });
+      let carData: GarageCar[] = [];
+      if (profileData) {
+        const { data, error: carsError } = await supabase
+          .from("carros")
+          .select("id, nome, marca, modelo, placa")
+          .eq("usuario_id", profileData.id)
+          .order("created_at", { ascending: true });
 
-      if (carsError) throw carsError;
+        if (carsError) throw carsError;
+        carData = (data ?? []) as GarageCar[];
+      }
       if (!ativo) return;
 
-      setProfile(profileData as GarageProfile);
-      setCars((carData ?? []) as GarageCar[]);
+      setProfile(profile);
+      setCars(carData);
       setLoading(false);
     }
 
@@ -70,8 +83,21 @@ export function useGarageData() {
       });
     });
 
+    const handleCarAdded = (event: Event) => {
+      const car = (event as CustomEvent<GarageCar>).detail;
+      if (car) setCars((current) => [...current, car]);
+    };
+    const handleCarDeleted = (event: Event) => {
+      const carId = (event as CustomEvent<string>).detail;
+      setCars((current) => current.filter((car) => car.id !== carId));
+    };
+    window.addEventListener("solarsync:carro-adicionado", handleCarAdded);
+    window.addEventListener("solarsync:carro-excluido", handleCarDeleted);
+
     return () => {
       ativo = false;
+      window.removeEventListener("solarsync:carro-adicionado", handleCarAdded);
+      window.removeEventListener("solarsync:carro-excluido", handleCarDeleted);
     };
   }, []);
 

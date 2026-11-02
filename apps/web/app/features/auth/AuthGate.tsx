@@ -14,12 +14,22 @@ export default function AuthGate() {
     const supabase = getSupabaseClient();
     let ativo = true;
 
-    void supabase.auth.getSession().then(({ data }) => {
+    async function carregarSessao() {
+      const callbackDeAutenticacao =
+        window.location.hash.includes("access_token") || window.location.search.includes("code=");
+
+      if (process.env.NEXT_PUBLIC_REQUIRE_LOGIN_ON_START === "true" && !callbackDeAutenticacao) {
+        await supabase.auth.signOut();
+      }
+
+      const { data } = await supabase.auth.getSession();
       if (ativo) {
         setUser(data.session?.user ?? null);
         setCarregando(false);
       }
-    });
+    }
+
+    void carregarSessao();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);

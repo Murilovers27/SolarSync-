@@ -171,6 +171,14 @@
   color: var(--erro);
 }
 
+.sucesso {
+  min-height: 18px;
+  margin: 12px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #3ddc84;
+}
+
 /* ---------- Rodapé ---------- */
 .rodape {
   margin: 12px 0 0;

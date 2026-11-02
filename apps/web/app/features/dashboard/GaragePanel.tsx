@@ -1,12 +1,87 @@
 "use client";
 
 import { useGarageData } from "./useGarageData";
+import { useUserLoad } from "./useUserLoad";
+import { useState } from "react";
+import { getSupabaseClient } from "../../lib/supabase";
+
+function formatSupabaseError(error: unknown, fallback: string) {
+  if (error && typeof error === "object" && "message" in error) {
+    const details = error as { message?: string; code?: string; details?: string; hint?: string };
+    return [details.message, details.code, details.details, details.hint].filter(Boolean).join(" · ");
+  }
+  return fallback;
+}
 
 export default function GaragePanel() {
   const { profile, cars, loading, error } = useGarageData();
+  const { loadW, saving, error: loadError, saveLoad } = useUserLoad();
+  const [loadInput, setLoadInput] = useState("");
+  const [carFormOpen, setCarFormOpen] = useState(false);
+  const [carName, setCarName] = useState("");
+  const [carBrand, setCarBrand] = useState("");
+  const [carModel, setCarModel] = useState("");
+  const [carPlate, setCarPlate] = useState("");
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [savingCar, setSavingCar] = useState(false);
 
   if (loading) return <section className="card" aria-label="Garagem"><p className="empty">Carregando garagem...</p></section>;
   if (error) return <section className="card" aria-label="Garagem"><p className="error-message" role="alert">{error}</p></section>;
+
+  async function handleSaveLoad() {
+    const value = Number(loadInput);
+    if (!Number.isInteger(value) || value <= 0) {
+      setActionError("Informe uma carga inteira maior que zero.");
+      return;
+    }
+    try {
+      await saveLoad(value);
+      setLoadInput("");
+    } catch {
+      // The hook exposes the server error.
+    }
+  }
+
+  async function handleAddCar() {
+    if (!profile || !carName.trim()) {
+      setActionError("Informe um nome para o veículo.");
+      return;
+    }
+    setSavingCar(true);
+    setActionError(null);
+    try {
+      const { data, error: insertError } = await getSupabaseClient()
+        .from("carros")
+        .insert({
+          usuario_id: profile.id,
+          nome: carName.trim(),
+          marca: carBrand.trim() || null,
+          modelo: carModel.trim() || null,
+          placa: carPlate.trim() || null,
+        })
+        .select("id, nome, marca, modelo, placa")
+        .single();
+      if (insertError) throw insertError;
+      window.dispatchEvent(new CustomEvent("solarsync:carro-adicionado", { detail: data }));
+      setCarName("");
+      setCarBrand("");
+      setCarModel("");
+      setCarPlate("");
+      setCarFormOpen(false);
+    } catch (addError: unknown) {
+      setActionError(formatSupabaseError(addError, "Não foi possível adicionar o veículo."));
+    } finally {
+      setSavingCar(false);
+    }
+  }
+
+  async function handleDeleteCar(id: string) {
+    if (!window.confirm("Excluir este veículo da sua conta?")) return;
+    setActionError(null);
+    const { error: deleteError } = await getSupabaseClient().from("carros").delete().eq("id", id);
+    if (deleteError) setActionError(formatSupabaseError(deleteError, "Não foi possível excluir o veículo."));
+    else window.dispatchEvent(new CustomEvent("solarsync:carro-excluido", { detail: id }));
+  }
 
   return (
     <>
@@ -19,9 +94,27 @@ export default function GaragePanel() {
         </ul>
       </section>
 
+      <section className="card" aria-label="Carga residencial">
+        <div className="card-head"><span className="label">Carga total</span><span className="muted">Watts</span></div>
+        <p className="hint">Valor usado no cálculo de consumo do painel. Atual: {loadW ?? profile?.carga_total_w ?? 400} W</p>
+        <div className="garage-form">
+          <input type="number" min="1" step="1" placeholder="Ex.: 400" value={loadInput} onChange={(event) => setLoadInput(event.target.value)} />
+          <button className="garage-button" type="button" onClick={() => void handleSaveLoad()} disabled={saving}>Salvar carga</button>
+        </div>
+        {loadError && <p className="error-message" role="alert">{loadError}</p>}
+      </section>
+
       <section className="card" aria-label="Carros vinculados">
-        <div className="card-head"><span className="label">Meus carros</span><span className="muted">{cars.length} cadastrados</span></div>
-        {cars.length === 0 ? <p className="empty">Nenhum carro vinculado a este usuário.</p> : <ul className="rows">{cars.map((car) => <li key={car.id}><div><strong>{car.nome}</strong><span>{[car.marca, car.modelo].filter(Boolean).join(" ") || "Modelo não informado"}</span></div><code>{car.placa || "Placa não informada"}</code></li>)}</ul>}
+        <div className="card-head"><span className="label">Meus carros</span><div className="card-actions"><span className="muted">{cars.length} cadastrados</span><button className="garage-button" type="button" onClick={() => setCarFormOpen((open) => !open)}>Adicionar</button></div></div>
+        {carFormOpen && <div className="garage-form">
+          <input placeholder="Nome" value={carName} onChange={(event) => setCarName(event.target.value)} />
+          <input placeholder="Marca" value={carBrand} onChange={(event) => setCarBrand(event.target.value)} />
+          <input placeholder="Modelo" value={carModel} onChange={(event) => setCarModel(event.target.value)} />
+          <input placeholder="Placa" value={carPlate} onChange={(event) => setCarPlate(event.target.value)} />
+          <button className="garage-button" type="button" onClick={() => void handleAddCar()} disabled={savingCar}>Salvar veículo</button>
+        </div>}
+        {actionError && <p className="error-message" role="alert">{actionError}</p>}
+        {cars.length === 0 ? <p className="empty">Nenhum carro vinculado a este usuário.</p> : <ul className="rows">{cars.map((car) => <li key={car.id}><div><strong>{car.nome}</strong><span>{[car.marca, car.modelo].filter(Boolean).join(" ") || "Modelo não informado"}</span></div><code>{car.placa || "Placa não informada"} <button className="delete-button" type="button" onClick={() => void handleDeleteCar(car.id)}>Excluir</button></code></li>)}</ul>}
       </section>
     </>
   );

@@ -49,12 +49,14 @@ export default function Login({ destino = "/" }: LoginProps) {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
+  const [mensagem, setMensagem] = useState("");
   const [carregando, setCarregando] = useState(false);
   const criando = modo === "criar";
 
   function alternarModo() {
     setModo(criando ? "entrar" : "criar");
     setErro("");
+    setMensagem("");
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -76,7 +78,12 @@ export default function Login({ destino = "/" }: LoginProps) {
 
     setCarregando(true);
     try {
-      await autenticar({ modo, nome: nome.trim(), email: email.trim(), senha });
+      const resultado = await autenticar({ modo, nome: nome.trim(), email: email.trim(), senha });
+      if (modo === "criar" && !resultado.session) {
+        setMensagem("Conta criada. Confirme o e-mail recebido para liberar o acesso.");
+        setCarregando(false);
+        return;
+      }
       router.push(destino);
     } catch (error) {
       setErro(error instanceof Error ? error.message : "Não foi possível acessar. Tente novamente.");
@@ -142,6 +149,7 @@ export default function Login({ destino = "/" }: LoginProps) {
           </button>
 
           <p className={styles.erro} role="alert" aria-live="polite">{erro}</p>
+          <p className={styles.sucesso} role="status" aria-live="polite">{mensagem}</p>
         </form>
 
         <p className={styles.rodape}>

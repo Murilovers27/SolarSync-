@@ -6,6 +6,7 @@ import { useDashboardData } from "./useDashboardData";
 import { formatDate, formatKw, readNumericValue } from "./utils";
 import type { Tab } from "./types";
 import { encerrarSessao } from "../../lib/auth";
+import { useUserLoad } from "./useUserLoad";
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "agora", label: "Agora" },
@@ -19,15 +20,16 @@ export default function DashboardPage() {
     status, latest, history, apiConnected, tab, setTab, now,
     clearingData, clearError, limparDados,
   } = useDashboardData();
+  const { loadW } = useUserLoad();
 
   const solarTelemetry = Object.values(latest).find(
     (message) => message.topic === "casa/solar/geracao" || message.topic.endsWith("/casa/solar/geracao"),
   );
   const solarW = solarTelemetry ? readNumericValue(solarTelemetry.value) : status?.geracaoSolar ?? null;
-  const loadW = status?.consumoResidencia ?? null;
-  const gridW = solarW !== null && loadW !== null ? Math.max(loadW - solarW, 0) : null;
-  const coverage = solarW !== null && loadW !== null && loadW > 0
-    ? Math.min(Math.round((solarW / loadW) * 100), 100)
+  const totalLoadW = loadW ?? status?.consumoResidencia ?? null;
+  const gridW = solarW !== null && totalLoadW !== null ? Math.max(totalLoadW - solarW, 0) : null;
+  const coverage = solarW !== null && totalLoadW !== null && totalLoadW > 0
+    ? Math.min(Math.round((solarW / totalLoadW) * 100), 100)
     : 0;
   const clock = now ? new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit" }).format(now) : "--:--";
   const dateLabel = now
@@ -62,13 +64,13 @@ export default function DashboardPage() {
           </section>
 
           <div className="pair">
-            <section className="card" aria-label="Carga total"><span className="label">Carga total</span><p className="big white">{loadW === null ? "--" : formatKw(loadW)}</p><p className="unit">kW consumo</p></section>
+            <section className="card" aria-label="Carga total"><span className="label">Carga total</span><p className="big white">{totalLoadW === null ? "--" : formatKw(totalLoadW)}</p><p className="unit">kW consumo</p></section>
             <section className="card" aria-label="Rede elétrica"><span className="label">Rede elétrica</span><p className="big green">{gridW === null ? "--" : formatKw(gridW)}</p><p className="unit">kW da rede</p></section>
           </div>
 
           <section className="card" aria-label="Fluxo de energia"><span className="label">Fluxo de energia</span><div className="flow">
             <div className="node solar"><span className="node-icon"><SunIcon /></span><small>Solar</small><strong>{solarW === null ? "--" : `${formatKw(solarW)} kW`}</strong></div><span className={`line ${solarW ? "active" : ""}`} />
-            <div className="node cars"><span className="node-icon"><CarIcon /></span><small>Carros</small><strong>{loadW === null ? "--" : `${formatKw(loadW)} kW`}</strong></div><span className={`line ${gridW ? "active-green" : ""}`} />
+            <div className="node cars"><span className="node-icon"><CarIcon /></span><small>Carros</small><strong>{totalLoadW === null ? "--" : `${formatKw(totalLoadW)} kW`}</strong></div><span className={`line ${gridW ? "active-green" : ""}`} />
             <div className="node grid"><span className="node-icon"><GridIcon /></span><small>Rede</small><strong>{gridW === null ? "--" : `${formatKw(gridW)} kW`}</strong></div>
           </div></section>
         </>}

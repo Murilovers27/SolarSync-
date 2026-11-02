@@ -18,14 +18,11 @@ export async function autenticar({ modo, nome, email, senha }: DadosAutenticacao
       password: senha,
       options: {
         data: { nome },
+        emailRedirectTo: typeof window !== "undefined" ? `${window.location.origin}/` : undefined,
       },
     });
 
     if (error) throw error;
-    if (!data.session) {
-      throw new Error("A conta foi criada. Confirme o e-mail antes de entrar.");
-    }
-
     return data;
   }
 

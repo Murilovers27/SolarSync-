@@ -13,6 +13,7 @@ export class MqttBrokerService {
   private readonly cliente: mqtt.MqttClient;
   private readonly estadoSistema: EstadoSistemaService;
   private readonly onMensagemRecebida: (mensagem: TelemetriaMensagem) => void;
+  private sequenciaComando = 0;
 
   constructor(estadoSistema: EstadoSistemaService, onMensagemRecebida: (mensagem: TelemetriaMensagem) => void) {
     this.estadoSistema = estadoSistema;
@@ -102,7 +103,8 @@ export class MqttBrokerService {
   }
 
   public publicarComando(decisao: DecisaoSistema) {
-    const mensagem = JSON.stringify(decisao);
+    const requestId = `${Date.now()}-${++this.sequenciaComando}`;
+    const mensagem = JSON.stringify({ ...decisao, requestId });
 
     this.cliente.publish(config.topicos.comandoCarregador, mensagem, { qos: 0 }, (erro) => {
       if (erro) {
@@ -190,8 +192,8 @@ export class MqttBrokerService {
 
     if (typeof value === "string") {
       const normalizado = value.trim().toLowerCase();
-      if (["true", "1", "on", "ativo", "ligado"].includes(normalizado)) return true;
-      if (["false", "0", "off", "inativo", "desligado"].includes(normalizado)) return false;
+      if (["true", "1", "on", "ativo", "ligado", "carregando"].includes(normalizado)) return true;
+      if (["false", "0", "off", "inativo", "desligado", "pausado"].includes(normalizado)) return false;
     }
 
     if (typeof value === "object" && value !== null) {

@@ -9,6 +9,7 @@ import { encerrarSessao } from "../../../lib/auth";
 import { useUserLoad } from "../useUserLoad";
 import MonitoringPanel from "./MonitoringPanel";
 import VehicleLoadsPanel from "./VehicleLoadsPanel";
+import HealthCheckPanel from "./HealthCheckPanel";
 import styles from "./DashboardPage.module.css";
 import "./DashboardShared.css";
 
@@ -16,7 +17,7 @@ const tabs: { id: Tab; label: string }[] = [
   { id: "agora", label: "Agora" },
   { id: "monitoramento", label: "Monitoramento" },
   { id: "cargas", label: "Cargas" },
-  { id: "historico", label: "Histórico" },
+  { id: "historico", label: "Saúde" },
   { id: "garagem", label: "Garagem" },
 ];
 
@@ -92,17 +93,12 @@ export default function DashboardPage() {
           </section>
         </>}
 
-        {tab === "historico" && <section className="card" aria-label="Histórico recente">
-          <div className="card-head"><span className="label">Histórico recente</span><div className="card-actions"><span className="muted">{history.length} mensagens</span><button className="clear-button" onClick={() => void limparDados()} disabled={clearingData}>{clearingData ? "Limpando..." : "Limpar"}</button></div></div>
-          {clearError && <p className="error-message" role="alert">{clearError}</p>}
-          {history.length === 0 ? <p className="empty">Nenhuma mensagem registrada ainda.</p> : <ul className="rows">{history.slice().reverse().map((message, index) => <li key={`${message.receivedAt}-${index}`}><div><strong>{message.topic}</strong><span>{formatDate(message.receivedAt)}</span></div><code>{JSON.stringify(message.value)}</code></li>)}</ul>}
-          <p className="hint">Armazenamento: {status?.persisted ? "Supabase" : "memória"}</p>
-        </section>}
+        {tab === "historico" && <HealthCheckPanel status={status} history={history} apiConnected={apiConnected} />}
 
         {tab === "garagem" && <GaragePanel />}
       </div>
 
-      <footer className="footer"><span>SolarSync v1.0</span><span className={`online ${apiConnected ? "on" : "off"}`}><i /> {apiConnected ? "Online" : "Offline"}</span></footer>
+      <footer className="footer"><span>SolarSync v0.24</span><span className={`online ${apiConnected ? "on" : "off"}`}><i /> {apiConnected ? "Online" : "Offline"}</span></footer>
     </main>
   );
 }

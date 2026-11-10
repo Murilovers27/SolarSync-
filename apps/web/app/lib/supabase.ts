@@ -10,6 +10,13 @@ export function getSupabaseClient() {
     throw new Error("Configure NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY.");
   }
 
-  client ??= createClient(url, key);
+  client ??= createClient(url, key, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storageKey: "solarsync-auth",
+    },
+  });
   return client;
 }
